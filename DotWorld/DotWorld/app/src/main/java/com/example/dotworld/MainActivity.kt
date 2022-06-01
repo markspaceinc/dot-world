@@ -172,8 +172,8 @@ fun DrawDots() {
                 MotionEvent.ACTION_POINTER_DOWN -> {
                 }
                 MotionEvent.ACTION_UP -> {
-                    logText = "UP at ${motionEvent.x}, ${motionEvent.y}"
                     penDown = false
+                    logText = "UP at ${motionEvent.x}, ${motionEvent.y}"
                 }
                 MotionEvent.ACTION_POINTER_UP -> {
                 }
@@ -190,25 +190,16 @@ fun DrawDots() {
                     }
                 }
                 MotionEvent.ACTION_HOVER_ENTER -> {
-                    currentPointerIcon.value = PointerIcon(4)
-
                     penHovering = true
-
                     logText = "HOVER_ENTER"
                 }
                 MotionEvent.ACTION_HOVER_MOVE -> {
-                    currentPointerIcon.value = PointerIcon(4)
-
                     lastPenX = motionEvent.x
                     lastPenY = motionEvent.y
-
                     logText = "HOVER_MOVE"
                 }
                 MotionEvent.ACTION_HOVER_EXIT -> {
-                    currentPointerIcon.value = PointerIcon(0)
-
                     penHovering = false
-
                     logText = "HOVER_EXIT"
                 }
             }
