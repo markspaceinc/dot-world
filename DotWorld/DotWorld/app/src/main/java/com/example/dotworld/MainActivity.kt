@@ -4,6 +4,7 @@ import android.graphics.Paint
 import android.graphics.Typeface
 import android.os.Bundle
 import android.view.MotionEvent
+import android.view.MotionEvent.TOOL_TYPE_ERASER
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
@@ -15,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
@@ -57,6 +59,18 @@ class DotManager() {
 
         return hitDot
     }
+
+    fun countSelectedDots(dots: MutableList<Dot>) : Int {
+        var selectedCount = 0
+
+        for (currentDot in dots) {
+            if (currentDot.selected) {
+                selectedCount++
+            }
+        }
+
+        return selectedCount
+    }
 }
 
 class MainActivity : ComponentActivity() {
@@ -93,9 +107,11 @@ fun DotWorldUI() {
 fun DrawDots() {
 
     val dots = remember { mutableStateListOf<Dot>() }
-    var selectedDot = remember { Dot(0.0F, 0.0F, 0.0F) }
+    var selectedDot : Dot? by remember { mutableStateOf<Dot?>(null  ) }
     val dotManager = remember { DotManager() }
     var penDown by remember { mutableStateOf( false ) }
+    var penHovering by remember { mutableStateOf( false ) }
+    var eraserActive by remember { mutableStateOf( false ) }
     var lastPenX by remember { mutableStateOf( 0F ) }
     var lastPenY by remember { mutableStateOf( 0F ) }
 
@@ -110,31 +126,42 @@ fun DrawDots() {
         .pointerInteropFilter {
             val motionEvent = it
             var toolType = motionEvent.getToolType(0)
+            eraserActive = (toolType == TOOL_TYPE_ERASER)
             var buttonState = motionEvent.buttonState
 
             when (motionEvent.action and MotionEvent.ACTION_MASK) {
                 MotionEvent.ACTION_DOWN -> {
                     var newSelectedDot = dotManager.findDotAt(dots, motionEvent.x, motionEvent.y)
                     if (newSelectedDot != null) {
-                        if (!selectedDot.isEqual(newSelectedDot)) {
-                            selectedDot.selected = false
-                            selectedDot = newSelectedDot
-                            selectedDot.selected = true
+                        // Eraser handling
+                        if (toolType == TOOL_TYPE_ERASER) {
+                            dots.remove(newSelectedDot)
+
+                            logText = "ERASE at ${motionEvent.x}, ${motionEvent.y}"
+                        }
+                            if(selectedDot != null) {
+                                if (!selectedDot!!.isEqual(newSelectedDot)) {
+                                    selectedDot?.selected = false
+                                    selectedDot = newSelectedDot
+                                    selectedDot?.selected = true
+                            }
 
                             logText = "TAP SELECT at ${motionEvent.x}, ${motionEvent.y}"
                         }
                     } else {
-                        selectedDot.selected = false
-                        selectedDot = Dot(motionEvent.x, motionEvent.y, 50.0F)
-                        selectedDot.selected = true
-                        dots.add(selectedDot)
+                        if (toolType != TOOL_TYPE_ERASER) {
+                            selectedDot?.selected = false
+                            selectedDot = Dot(motionEvent.x, motionEvent.y, 50.0F)
+                            dots.add(selectedDot!!)
+                            selectedDot?.selected = true
 
-                        logText = "TAP ADD at ${motionEvent.x}, ${motionEvent.y}"
+                            logText = "TAP ADD at ${motionEvent.x}, ${motionEvent.y}"
+                        }
                     }
 
                     if (selectedDot != null) {
                         if (buttonState != 0) {
-                            selectedDot.color = abs(selectedDot.color - 1)
+                            selectedDot!!.color = abs(selectedDot!!.color - 1)
                         }
                     }
 
@@ -154,8 +181,8 @@ fun DrawDots() {
                     if (penDown && selectedDot != null) {
                         var deltaX = motionEvent.x - lastPenX
                         var deltaY = motionEvent.y - lastPenY
-                        selectedDot.x += deltaX
-                        selectedDot.y += deltaY
+                        selectedDot!!.x += deltaX
+                        selectedDot!!.y += deltaY
                         lastPenX = motionEvent.x
                         lastPenY = motionEvent.y
 
@@ -165,15 +192,23 @@ fun DrawDots() {
                 MotionEvent.ACTION_HOVER_ENTER -> {
                     currentPointerIcon.value = PointerIcon(4)
 
+                    penHovering = true
+
                     logText = "HOVER_ENTER"
                 }
                 MotionEvent.ACTION_HOVER_MOVE -> {
                     currentPointerIcon.value = PointerIcon(4)
 
+                    lastPenX = motionEvent.x
+                    lastPenY = motionEvent.y
+
                     logText = "HOVER_MOVE"
                 }
                 MotionEvent.ACTION_HOVER_EXIT -> {
                     currentPointerIcon.value = PointerIcon(0)
+
+                    penHovering = false
+
                     logText = "HOVER_EXIT"
                 }
             }
@@ -188,7 +223,7 @@ fun DrawDots() {
         val dotColor1 = Color(1f, 1f, 0f, 1f)
         val dotColor2 = Color(0.5f, 1f, 0f, 1f)
         val selectedDotOutlineColor = Color(1f, 0.5f, 0f, 1f)
-        val xyColor = Color(0f, 0f, 0f, 1f)
+        val xyColor = Color(0f, 0f, 0f, 0f)
 
         val textPaint = Paint()
         textPaint.textAlign = Paint.Align.LEFT
@@ -204,7 +239,7 @@ fun DrawDots() {
                 radius = 50.0.toFloat()
             )
 
-            if (dot == selectedDot) {
+            if (dot == selectedDot || dot.selected) {
                 drawCircle(
                     color = selectedDotOutlineColor,
                     center = Offset(x = dot.x, y = dot.y),
@@ -214,15 +249,40 @@ fun DrawDots() {
             }
         }
 
+        if (!eraserActive) {
+            drawRect( Color.Black ,
+                topLeft = Offset( lastPenX - 10f, lastPenY - 40f),
+                size = Size( 20f, 80f )
+            )
+
+            drawRect( Color.Black ,
+                topLeft = Offset( lastPenX  -40f, lastPenY - 10f ),
+                size = Size( 80f, 20f )
+            )
+        } else {
+            drawRect( Color.Black ,
+                topLeft = Offset( lastPenX - 30f, lastPenY - 40f),
+                size = Size( 60f, 60f )
+            )
+            drawRect( Color.Black ,
+                topLeft = Offset( lastPenX - 30f, lastPenY - 40f),
+                size = Size( 60f, 80f ),
+                style = Stroke(10f)
+            )
+        }
 
         drawCircle(
             color = xyColor,
             center = Offset(x = lastPenX, y = lastPenY),
             radius = 2.0.toFloat()
         )
+
         // Log text
         drawIntoCanvas {
             it.nativeCanvas.drawText(logText, 25f, canvasHeight - 50f, textPaint)
+        }
+        drawIntoCanvas {
+            it.nativeCanvas.drawText("Selected dots: ${dotManager.countSelectedDots(dots)}", 25f, canvasHeight - 100f, textPaint)
         }
     }
 }

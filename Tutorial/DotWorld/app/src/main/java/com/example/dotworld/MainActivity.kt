@@ -4,6 +4,7 @@ import android.graphics.Paint
 import android.graphics.Typeface
 import android.os.Bundle
 import android.view.MotionEvent
+import android.view.MotionEvent.TOOL_TYPE_ERASER
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
@@ -15,14 +16,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.input.pointer.pointerHoverIcon
-import androidx.compose.ui.input.pointer.pointerInteropFilter
+import androidx.compose.ui.input.pointer.*
 import com.example.dotworld.ui.theme.DotWorldTheme
+import kotlin.math.abs
 import kotlin.math.pow
 
 // Dot handling support
@@ -57,6 +58,18 @@ class DotManager() {
         }
 
         return hitDot
+    }
+
+    fun countSelectedDots(dots: MutableList<Dot>) : Int {
+        var selectedCount = 0
+
+        for (currentDot in dots) {
+            if (currentDot.selected) {
+                selectedCount++
+            }
+        }
+
+        return selectedCount
     }
 }
 
@@ -94,9 +107,11 @@ fun DotWorldUI() {
 fun DrawDots() {
 
     val dots = remember { mutableStateListOf<Dot>() }
-    var selectedDot = remember { Dot(0.0F, 0.0F, 0.0F) }
+    var selectedDot : Dot? by remember { mutableStateOf<Dot?>(null  ) }
     val dotManager = remember { DotManager() }
     var penDown by remember { mutableStateOf( false ) }
+    var penHovering by remember { mutableStateOf( false ) }
+    var eraserActive by remember { mutableStateOf( false ) }
     var lastPenX by remember { mutableStateOf( 0F ) }
     var lastPenY by remember { mutableStateOf( 0F ) }
 
@@ -111,6 +126,7 @@ fun DrawDots() {
         .pointerInteropFilter {
             val motionEvent = it
             var toolType = motionEvent.getToolType(0)
+            eraserActive = (toolType == TOOL_TYPE_ERASER)
             var buttonState = motionEvent.buttonState
 
             when (motionEvent.action and MotionEvent.ACTION_MASK) {
@@ -142,7 +158,7 @@ fun DrawDots() {
         val dotColor1 = Color(1f, 1f, 0f, 1f)
         val dotColor2 = Color(0.5f, 1f, 0f, 1f)
         val selectedDotOutlineColor = Color(1f, 0.5f, 0f, 1f)
-        val xyColor = Color(0f, 0f, 0f, 1f)
+        val xyColor = Color(0f, 0f, 0f, 0f)
 
         val textPaint = Paint()
         textPaint.textAlign = Paint.Align.LEFT
@@ -158,7 +174,7 @@ fun DrawDots() {
                 radius = 50.0.toFloat()
             )
 
-            if (dot == selectedDot) {
+            if (dot == selectedDot || dot.selected) {
                 drawCircle(
                     color = selectedDotOutlineColor,
                     center = Offset(x = dot.x, y = dot.y),
@@ -168,12 +184,34 @@ fun DrawDots() {
             }
         }
 
+        if (!eraserActive) {
+            drawRect( Color.Black ,
+                topLeft = Offset( lastPenX - 10f, lastPenY - 40f),
+                size = Size( 20f, 80f )
+            )
+
+            drawRect( Color.Black ,
+                topLeft = Offset( lastPenX  -40f, lastPenY - 10f ),
+                size = Size( 80f, 20f )
+            )
+        } else {
+            drawRect( Color.Black ,
+                topLeft = Offset( lastPenX - 30f, lastPenY - 40f),
+                size = Size( 60f, 60f )
+            )
+            drawRect( Color.Black ,
+                topLeft = Offset( lastPenX - 30f, lastPenY - 40f),
+                size = Size( 60f, 80f ),
+                style = Stroke(10f)
+            )
+        }
 
         drawCircle(
             color = xyColor,
             center = Offset(x = lastPenX, y = lastPenY),
             radius = 2.0.toFloat()
         )
+
         // Log text
         drawIntoCanvas {
             it.nativeCanvas.drawText(logText, 25f, canvasHeight - 50f, textPaint)
