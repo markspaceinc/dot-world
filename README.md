@@ -3,9 +3,7 @@
 With its dual screens and versatile stylus, the Surface Duo offers new opportunities for both user interface and user interaction with applications. This blog post will examine how we at Mark/Space integrated Duo support into our Argon retro gaming system, and present a step-by-step tutorial to add support for the Surface Duo Pen into your own application.
  
 Traditional Android XML UI layouts have become complicated due to the large number of device form factors from small phones to large tablets, notebooks and TVs. Introducing support for foldable devices that can be configured and held in multiple orientations was greatly simplified by migrating our user interface to Jetpack Compose. Compose allows the developer to describe the components that make up the UI in code, and let the runtime manage the correct display for the current device and orientation.
- 
-(Plug Andy's blog post here)
- 
+  
 Switching to Compose also allowed us to work with multiple user input methods more easily. One of Argon's main design goals is to bring the retro gaming experience onto modern hardware, with easy installation and no difficult configuration. We try to take advantage of the advances in hardware to enhance the game playing experience, and breathe new life into retro games.
  
 An example of this is the Atari 8-bit game Planetary Defense, by Tom Hudson. The game was originally played with an analog joystick or a KoalaPad graphics tablet. We added support for pen input to aim and fire in the game. The same Compose event handling also works for touch and mouse input, so there is really very little to do to add a large amount of functionality.
