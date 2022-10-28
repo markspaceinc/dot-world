@@ -240,26 +240,32 @@ fun DrawDots() {
             }
         }
 
-        if (!eraserActive) {
-            drawRect( Color.Black ,
-                topLeft = Offset( lastPenX - 10f, lastPenY - 40f),
-                size = Size( 20f, 80f )
-            )
+        if (penHovering) {
+            if (!eraserActive) {
+                drawRect(
+                    Color.Black,
+                    topLeft = Offset(lastPenX - 10f, lastPenY - 40f),
+                    size = Size(20f, 80f)
+                )
 
-            drawRect( Color.Black ,
-                topLeft = Offset( lastPenX  -40f, lastPenY - 10f ),
-                size = Size( 80f, 20f )
-            )
-        } else {
-            drawRect( Color.Black ,
-                topLeft = Offset( lastPenX - 30f, lastPenY - 40f),
-                size = Size( 60f, 60f )
-            )
-            drawRect( Color.Black ,
-                topLeft = Offset( lastPenX - 30f, lastPenY - 40f),
-                size = Size( 60f, 80f ),
-                style = Stroke(10f)
-            )
+                drawRect(
+                    Color.Black,
+                    topLeft = Offset(lastPenX - 40f, lastPenY - 10f),
+                    size = Size(80f, 20f)
+                )
+            } else {
+                drawRect(
+                    Color.Black,
+                    topLeft = Offset(lastPenX - 30f, lastPenY - 40f),
+                    size = Size(60f, 60f)
+                )
+                drawRect(
+                    Color.Black,
+                    topLeft = Offset(lastPenX - 30f, lastPenY - 40f),
+                    size = Size(60f, 80f),
+                    style = Stroke(10f)
+                )
+            }
         }
 
         drawCircle(

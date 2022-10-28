@@ -36,7 +36,7 @@ The following steps wire up events using the Canvas' Compose Modifier. We do thi
  
 All of the code for this app is in the MainActivity.kt file. The DrawDots() function is where the pen (and other) event handling is implemented. The pointerInteropFilter in the sample code already captures the MotionEvent parameter, and has a skeleton when {} block with cases for the events we need to process. As you complete this tutorial, you will be adding the handling code necessary to manage the objects on screen.
 
-Note that you will need Android Studio Chipmunk or later to get support for the required APIs.
+Note that you will need Android Studio Dolphin or later to get support for the required APIs.
 
 ### 1. Tap
  
